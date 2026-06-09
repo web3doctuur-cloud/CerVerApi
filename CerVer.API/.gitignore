@@ -1,0 +1,54 @@
+# Visual Studio / .NET
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Rider / JetBrains
+.idea/
+
+# NuGet
+*.nupkg
+packages/
+.nuget/
+
+# Publish output
+publish/
+**/publish/
+
+# ASP.NET temporary files / logs
+*.log
+
+# Entity Framework migrations (keep if you want migrations in source)
+# Migrations/
+
+# User secrets / sensitive files
+secrets.json
+appsettings.*.Local.json
+appsettings.Development.json
+appsettings.*.Secrets.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Certificates, keys, credentials
+*.pfx
+*.key
+*.cer
+
+# Databases
+*.db
+*.sqlite
+
+# Frontend
+node_modules/
+dist/

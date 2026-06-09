@@ -1,0 +1,15 @@
+# Secrets - NEVER commit!
+secrets.json
+appsettings.Development.json
+
+# Build outputs
+/bin/
+/obj/
+
+# Certificates and uploads (will be created in production)
+/Certificates/
+/Uploads/
+
+# User files
+*.user
+*.suo
