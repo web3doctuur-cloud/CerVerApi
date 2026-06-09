@@ -37,8 +37,8 @@ jobs:
       - name: 'Azure Login via OIDC'
         uses: azure/login@v3
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANT_ID }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
