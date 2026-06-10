@@ -1,48 +1,64 @@
-name: Build and Deploy to Azure with OIDC
+name: Build and deploy ASP.Net Core app to Azure Web App - cerver-api
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
-env:
-  AZURE_WEBAPP_NAME: cerver-api
-  DOTNET_VERSION: '10.0.x'
-
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
 
-      - name: Setup .NET Core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '10.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore CerVer.API/CerVer.API.csproj
 
-      - name: Build project
-        run: dotnet build --configuration Release --no-restore
+      - name: Build with dotnet
+        run: dotnet build CerVer.API/CerVer.API.csproj --configuration Release --no-restore
 
-      - name: Publish project
-        run: dotnet publish CerVer.API.csproj --configuration Release --output publish_output
+      - name: dotnet publish
+        run: dotnet publish CerVer.API/CerVer.API.csproj --configuration Release --output publish_output --no-restore
 
-      - name: 'Azure Login via OIDC'
-        uses: azure/login@v3
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: .net-app
+          path: publish_output
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: .net-app
+      
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID}}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID}}
 
       - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: publish_output
+          app-name: 'server-api'
+          slot-name: 'Production'
+          package: .
