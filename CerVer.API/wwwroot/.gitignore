@@ -13,3 +13,17 @@ appsettings.Development.json
 # User files
 *.user
 *.suo
+# Build outputs
+publish_output/
+bin/
+obj/
+*.dll
+*.exe
+
+# User secrets
+secrets.json
+*.user
+
+# IDE files
+.vs/
+.vscode/
