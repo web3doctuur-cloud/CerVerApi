@@ -100,6 +100,7 @@ namespace CerVer.API.Controllers
 
         // GET: api/analytics/membership-popularity
         // Most popular memberships
+        [HttpGet("membership-popularity")]
         public async Task<IActionResult> GetMembershipPopularity()
         {
             var popularMemberships = await _context.MembershipRequests
@@ -331,7 +332,7 @@ namespace CerVer.API.Controllers
         {
             return new DateTime(2000, month, 1).ToString("MMMM");
         }
-
+         
         private async Task<double> GetConversionRate()
         {
             var totalRequests = await _context.MembershipRequests.CountAsync();
