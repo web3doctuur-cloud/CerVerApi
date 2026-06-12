@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
+
 namespace CerVer.API.Controllers
 {
     [Route("api/[controller]")]
@@ -241,10 +242,10 @@ namespace CerVer.API.Controllers
             });
         }
 
-        
+
         // POST: api/membershiprequests/{id}/generate-certificate
         // ADMIN ONLY - Generate certificate after approval
-        
+
         [Authorize(Roles = "Admin")]
         [HttpPost("{id}/generate-certificate")]
         public async Task<IActionResult> GenerateCertificate(int id)
@@ -258,31 +259,24 @@ namespace CerVer.API.Controllers
                 return NotFound(new { message = "Approved request not found" });
             }
 
-            // Check if certificate already exists
             var existingCertificate = await _context.Certificates
                 .FirstOrDefaultAsync(c => c.MembershipRequestId == id);
 
             if (existingCertificate != null)
             {
-                return BadRequest(new { message = "Certificate already generated for this request" });
+                return BadRequest(new { message = "Certificate already generated" });
             }
 
             try
             {
-                // Generate certificate details
                 var certificateNumber = _certificateService.GenerateCertificateNumber();
                 var serialNumber = _certificateService.GenerateSerialNumber();
                 var issueDate = DateTime.Now;
                 var expiryDate = issueDate.AddYears(2);
-
-                // Create verification URL
                 var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "https://localhost:7000";
                 var verificationUrl = $"{baseUrl}/verify/{certificateNumber}";
-
-                // Generate QR code
                 var qrCodeBase64 = _certificateService.GenerateQRCode(verificationUrl);
 
-                // Generate HTML certificate
                 var html = _certificateService.GenerateCertificateHtml(
                     request.FullName,
                     request.Membership.Title,
@@ -293,13 +287,9 @@ namespace CerVer.API.Controllers
                     qrCodeBase64
                 );
 
-                // Generate PDF
                 var pdfBytes = await _certificateService.GeneratePdfFromHtml(html);
-
-                // Save PDF
                 var pdfPath = await _certificateService.SaveCertificatePdf(pdfBytes, certificateNumber);
 
-                // Save certificate to database
                 var certificate = new Certificate
                 {
                     MembershipRequestId = request.Id,
@@ -317,24 +307,10 @@ namespace CerVer.API.Controllers
                 };
 
                 _context.Certificates.Add(certificate);
-
-                // Update request with certificate info
                 request.CertificateNumber = certificateNumber;
                 request.CertificatePath = pdfPath;
 
                 await _context.SaveChangesAsync();
-
-                // Send email notification
-                var user = await _userManager.FindByIdAsync(request.UserId);
-                if (user != null)
-                {
-                    await _emailService.NotifyCertificateReady(
-                        user.Email,
-                        request.FullName,
-                        certificateNumber,
-                        request.Membership.Title
-                    );
-                }
 
                 return Ok(new
                 {
@@ -345,14 +321,13 @@ namespace CerVer.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = $"Error generating certificate: {ex.Message}" });
+                return StatusCode(500, new { message = $"Error: {ex.Message}" });
             }
         }
 
-        
         // POST: api/membershiprequests/upload-requirements/{requestId}
         // USER ONLY - Upload requirements file for a request
-        
+
         [Authorize]
         [HttpPost("upload-requirements/{requestId}")]
         public async Task<IActionResult> UploadRequirements(int requestId, IFormFile file)
