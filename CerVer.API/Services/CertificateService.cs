@@ -1,7 +1,9 @@
-﻿using QRCoder;
-using SelectPdf;  // This works with Select.HtmlToPdf.NetCore
+﻿using DinkToPdf;
+using DinkToPdf.Contracts;
+using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Text;
 
 namespace CerVer.API.Services
 {
@@ -9,11 +11,13 @@ namespace CerVer.API.Services
     {
         private readonly IWebHostEnvironment _environment;
         private readonly IConfiguration _configuration;
+        private readonly IConverter _converter;
 
-        public CertificateService(IWebHostEnvironment environment, IConfiguration configuration)
+        public CertificateService(IWebHostEnvironment environment, IConfiguration configuration, IConverter converter)
         {
             _environment = environment;
             _configuration = configuration;
+            _converter = converter;
         }
 
         public string GenerateCertificateNumber()
@@ -143,12 +147,23 @@ namespace CerVer.API.Services
 
         public async Task<byte[]> GeneratePdfFromHtml(string html)
         {
-            
-            var converter = new SelectPdf.HtmlToPdf();
-            var doc = converter.ConvertHtmlString(html);
-            var pdfBytes = doc.Save();
-            doc.Close();
-            return await Task.FromResult(pdfBytes);
+            var doc = new HtmlToPdfDocument()
+            {
+                GlobalSettings = {
+                    ColorMode = DinkToPdf.ColorMode.Color,
+                    Orientation = DinkToPdf.Orientation.Portrait,
+                    PaperSize = DinkToPdf.PaperKind.A4,
+                },
+                Objects = {
+                    new ObjectSettings() {
+                        HtmlContent = html,
+                        WebSettings = { DefaultEncoding = "utf-8" },
+                    }
+                }
+            };
+
+            byte[] pdf = _converter.Convert(doc);
+            return await Task.FromResult(pdf);
         }
 
         public async Task<string> SaveCertificatePdf(byte[] pdfBytes, string certificateNumber)

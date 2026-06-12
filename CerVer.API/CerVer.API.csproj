@@ -7,6 +7,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Remove="C:\Users\hadiz\.nuget\packages\select.htmltopdf.netcore\26.1.0\contentFiles\any\any\Select.Html.dep" />
+	  <Content Remove="C:\Users\hadiz\.nuget\packages\select.htmltopdf\26.1.0\contentFiles\any\any\Select.Html.dep" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Include="wwwroot\.gitignore" />
 	</ItemGroup>
 
