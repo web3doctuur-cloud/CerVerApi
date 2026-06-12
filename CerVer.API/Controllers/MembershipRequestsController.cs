@@ -199,9 +199,13 @@ namespace CerVer.API.Controllers
             });
         }
 
-        private string? GenerateCertificateNumber()
+        private string GenerateCertificateNumber()
         {
-            throw new NotImplementedException();
+            // Format: CERT-YYYYMMDD-XXXX
+            var date = DateTime.Now.ToString("yyyyMMdd");
+            var random = new Random();
+            var sequence = random.Next(1000, 9999).ToString();
+            return $"CERT-{date}-{sequence}";
         }
 
 
