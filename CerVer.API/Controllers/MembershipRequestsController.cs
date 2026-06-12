@@ -156,7 +156,7 @@ namespace CerVer.API.Controllers
         // ADMIN ONLY - Approve a membership request
         
         [Authorize(Roles = "Admin")]
-        [HttpPut("{id}/approve")]
+        [HttpPost("{id}/approve")]
         public async Task<IActionResult> ApproveRequest(int id)
         {
             var request = await _context.MembershipRequests
@@ -209,7 +209,7 @@ namespace CerVer.API.Controllers
         // ADMIN ONLY - Reject a membership request
 
         [Authorize(Roles = "Admin")]
-        [HttpPut("{id}/reject")]
+        [HttpPost("{id}/reject")]
         public async Task<IActionResult> RejectRequest(int id, [FromBody] RejectRequestModel model)
         {
             var request = await _context.MembershipRequests
