@@ -18,6 +18,35 @@ CerVer.API is a complete backend solution for certificate management systems. Or
 **Frontend Repository:** [cerver-frontend](https://github.com/web3doctuur-cloud/cerver-frontend)
 
 ---
+📡 API Endpoints (29 Total)
+Authentication
+Method	Endpoint	Description	Auth
+POST	/api/Auth/register	Register new user	None
+POST	/api/Auth/login	Login and get JWT token	None
+Memberships
+Method	Endpoint	Description	Auth
+GET	/api/Memberships	Get active memberships	None
+GET	/api/Memberships/all	Get all memberships	Admin
+GET	/api/Memberships/{id}	Get membership by ID	None
+POST	/api/Memberships	Create membership	Admin
+PUT	/api/Memberships/{id}	Update membership	Admin
+DELETE	/api/Memberships/{id}	Delete membership	Admin
+Membership Requests
+Method	Endpoint	Description	Auth
+GET	/api/MembershipRequests	Get all requests	Admin
+GET	/api/MembershipRequests/my	Get user's requests	User
+GET	/api/MembershipRequests/pending	Get pending requests	Admin
+POST	/api/MembershipRequests	Submit request	User
+POST	/api/MembershipRequests/{id}/approve	Approve request	Admin
+POST	/api/MembershipRequests/{id}/reject	Reject request	Admin
+POST	/api/MembershipRequests/{id}/generate-certificate	Generate certificate	Admin
+Certificates
+Method	Endpoint	Description	Auth
+GET	/api/Certificates/my	Get user's certificates	User
+GET	/api/Certificates/download/{certNumber}	Download PDF	User
+GET	/api/Certificates/verify/{certNumber}	Public verification	None
+DELETE	/api/Certificates/revoke/{certNumber}	Revoke certificate	Admin
+
 
 ## ✨ Features
 
@@ -142,36 +171,7 @@ dotnet ef database update
 # Run the application
 dotnet run
 
-########
-📡 API Endpoints (29 Total)
-Authentication
-Method	Endpoint	Description	Auth
-POST	/api/Auth/register	Register new user	None
-POST	/api/Auth/login	Login and get JWT token	None
-Memberships
-Method	Endpoint	Description	Auth
-GET	/api/Memberships	Get active memberships	None
-GET	/api/Memberships/all	Get all memberships	Admin
-GET	/api/Memberships/{id}	Get membership by ID	None
-POST	/api/Memberships	Create membership	Admin
-PUT	/api/Memberships/{id}	Update membership	Admin
-DELETE	/api/Memberships/{id}	Delete membership	Admin
-Membership Requests
-Method	Endpoint	Description	Auth
-GET	/api/MembershipRequests	Get all requests	Admin
-GET	/api/MembershipRequests/my	Get user's requests	User
-GET	/api/MembershipRequests/pending	Get pending requests	Admin
-POST	/api/MembershipRequests	Submit request	User
-POST	/api/MembershipRequests/{id}/approve	Approve request	Admin
-POST	/api/MembershipRequests/{id}/reject	Reject request	Admin
-POST	/api/MembershipRequests/{id}/generate-certificate	Generate certificate	Admin
-Certificates
-Method	Endpoint	Description	Auth
-GET	/api/Certificates/my	Get user's certificates	User
-GET	/api/Certificates/download/{certNumber}	Download PDF	User
-GET	/api/Certificates/verify/{certNumber}	Public verification	None
-DELETE	/api/Certificates/revoke/{certNumber}	Revoke certificate	Admin
- 
+######## 
 ---
 <img width="1090" height="812" alt="image" src="https://github.com/user-attachments/assets/78fa917a-b5a3-4093-9785-87c2ebb68cbc" />
 🚀 Deployment
@@ -179,11 +179,15 @@ Deploy to Azure App Service
 # Publish locally
 dotnet publish -c Release -o ./publish
 
+
 # Deploy via Azure CLI
 az webapp deployment source config-zip \
   --resource-group CerVer-RG \
   --name cerver-api \
   --src ./publish.zip
+
+
+
 🧪** Testing**
 Using Swagger UI
 Using Postman
