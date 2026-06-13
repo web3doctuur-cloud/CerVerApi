@@ -7,18 +7,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Remove="C:\Users\hadiz\.nuget\packages\select.htmltopdf.netcore\26.1.0\contentFiles\any\any\Select.Html.dep" />
-	  <Content Remove="C:\Users\hadiz\.nuget\packages\select.htmltopdf\26.1.0\contentFiles\any\any\Select.Html.dep" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="wwwroot\.gitignore" />
+		<None Include="wwwroot\.gitignore" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="DinkToPdf" Version="1.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
-		<PackageReference Include="Microsoft.OpenApi" Version="3.7.0" />
 		<PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.3.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
@@ -31,18 +25,8 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="QRCoder" Version="1.8.0" />
-         
-		
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
-         
-		
-		<PackageReference Include="Select.HtmlToPdf" Version="26.1.0" />
-         
-		
-		<PackageReference Include="Select.HtmlToPdf.NetCore" Version="26.1.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
-
-		<!-- MailKit for SMTP sending -->
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="MailKit" Version="4.17.0" />
 	</ItemGroup>
 
