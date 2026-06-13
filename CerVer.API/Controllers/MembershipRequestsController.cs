@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-
 namespace CerVer.API.Controllers
 {
     [Route("api/[controller]")]
@@ -38,9 +37,10 @@ namespace CerVer.API.Controllers
             _configuration = configuration;
         }
 
-        
+        // ============================================================
         // GET: api/membershiprequests
-        // ADMIN ONLY - Get all membership request
+        // ADMIN ONLY - Get all membership requests
+        // ============================================================
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MembershipRequest>>> GetAllRequests()
@@ -53,9 +53,10 @@ namespace CerVer.API.Controllers
             return Ok(requests);
         }
 
-       
+        // ============================================================
         // GET: api/membershiprequests/my
         // USER ONLY - Get current user's own requests
+        // ============================================================
         [Authorize]
         [HttpGet("my")]
         public async Task<ActionResult<IEnumerable<MembershipRequest>>> GetMyRequests()
@@ -76,10 +77,10 @@ namespace CerVer.API.Controllers
             return Ok(requests);
         }
 
-        
+        // ============================================================
         // GET: api/membershiprequests/pending
         // ADMIN ONLY - Get pending requests (awaiting approval)
-
+        // ============================================================
         [Authorize(Roles = "Admin")]
         [HttpGet("pending")]
         public async Task<ActionResult<IEnumerable<MembershipRequest>>> GetPendingRequests()
@@ -93,10 +94,10 @@ namespace CerVer.API.Controllers
             return Ok(requests);
         }
 
-        
+        // ============================================================
         // POST: api/membershiprequests
         // USER ONLY - Submit a new membership request
-        
+        // ============================================================
         [Authorize]
         [HttpPost]
         public async Task<ActionResult<MembershipRequest>> CreateRequest([FromBody] CreateRequestModel model)
@@ -142,7 +143,6 @@ namespace CerVer.API.Controllers
             _context.MembershipRequests.Add(request);
             await _context.SaveChangesAsync();
 
-            
             await _emailService.NotifyAdminNewRequest(request.FullName, membership.Title, request.Id);
 
             return Ok(new
@@ -152,10 +152,10 @@ namespace CerVer.API.Controllers
             });
         }
 
-        
+        // ============================================================
         // PUT: api/membershiprequests/{id}/approve
-        // ADMIN ONLY - Approve a membership request
-        
+        // ADMIN ONLY - Approve a membership request and auto-generate certificate
+        // ============================================================
         [Authorize(Roles = "Admin")]
         [HttpPost("{id}/approve")]
         public async Task<IActionResult> ApproveRequest(int id)
@@ -186,6 +186,17 @@ namespace CerVer.API.Controllers
 
             await _context.SaveChangesAsync();
 
+            // 🆕 AUTOMATICALLY GENERATE CERTIFICATE AFTER APPROVAL
+            try
+            {
+                await GenerateCertificateAfterApproval(request);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the approval
+                Console.WriteLine($"Certificate generation failed: {ex.Message}");
+            }
+
             // Send email notification to user
             await _emailService.NotifyUserRequestApproved(
                 request.Email,
@@ -195,24 +206,81 @@ namespace CerVer.API.Controllers
 
             return Ok(new
             {
-                message = "Request approved successfully!",
+                message = "Request approved and certificate generated successfully!",
                 certificateNumber = request.CertificateNumber
             });
         }
 
+        // ============================================================
+        // HELPER: Generate Certificate Number
+        // ============================================================
         private string GenerateCertificateNumber()
         {
-            // Format: CERT-YYYYMMDD-XXXX
             var date = DateTime.Now.ToString("yyyyMMdd");
             var random = new Random();
             var sequence = random.Next(1000, 9999).ToString();
             return $"CERT-{date}-{sequence}";
         }
 
+        // ============================================================
+        // HELPER: Auto-Generate Certificate After Approval
+        // ============================================================
+        private async Task GenerateCertificateAfterApproval(MembershipRequest request)
+        {
+            // Check if certificate already exists
+            var existingCertificate = await _context.Certificates
+                .FirstOrDefaultAsync(c => c.MembershipRequestId == request.Id);
 
-        // PUT: api/membershiprequests/{id}/reject
+            if (existingCertificate != null)
+                return;
+
+            var certificateNumber = _certificateService.GenerateCertificateNumber();
+            var serialNumber = _certificateService.GenerateSerialNumber();
+            var issueDate = DateTime.Now;
+            var expiryDate = issueDate.AddYears(2);
+            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "https://localhost:7000";
+            var verificationUrl = $"{baseUrl}/verify/{certificateNumber}";
+            var qrCodeBase64 = _certificateService.GenerateQRCode(verificationUrl);
+
+            var html = _certificateService.GenerateCertificateHtml(
+                request.FullName,
+                request.Membership.Title,
+                certificateNumber,
+                serialNumber,
+                issueDate,
+                expiryDate,
+                qrCodeBase64
+            );
+
+            var pdfBytes = await _certificateService.GeneratePdfFromHtml(html);
+            var pdfPath = await _certificateService.SaveCertificatePdf(pdfBytes, certificateNumber);
+
+            var certificate = new Certificate
+            {
+                MembershipRequestId = request.Id,
+                CertificateNumber = certificateNumber,
+                SerialNumber = serialNumber,
+                UserId = request.UserId,
+                FullName = request.FullName,
+                MembershipTitle = request.Membership.Title,
+                IssueDate = issueDate,
+                ExpiryDate = expiryDate,
+                QrCodeUrl = verificationUrl,
+                PdfPath = pdfPath,
+                VerificationUrl = verificationUrl,
+                IsValid = true
+            };
+
+            _context.Certificates.Add(certificate);
+            request.CertificatePath = pdfPath;
+
+            await _context.SaveChangesAsync();
+        }
+
+        // ============================================================
+        // POST: api/membershiprequests/{id}/reject
         // ADMIN ONLY - Reject a membership request
-
+        // ============================================================
         [Authorize(Roles = "Admin")]
         [HttpPost("{id}/reject")]
         public async Task<IActionResult> RejectRequest(int id, [FromBody] RejectRequestModel model)
@@ -242,10 +310,10 @@ namespace CerVer.API.Controllers
             });
         }
 
-
+        // ============================================================
         // POST: api/membershiprequests/{id}/generate-certificate
-        // ADMIN ONLY - Generate certificate after approval
-
+        // ADMIN ONLY - Manually generate certificate (if auto-generation fails)
+        // ============================================================
         [Authorize(Roles = "Admin")]
         [HttpPost("{id}/generate-certificate")]
         public async Task<IActionResult> GenerateCertificate(int id)
@@ -325,9 +393,10 @@ namespace CerVer.API.Controllers
             }
         }
 
+        // ============================================================
         // POST: api/membershiprequests/upload-requirements/{requestId}
         // USER ONLY - Upload requirements file for a request
-
+        // ============================================================
         [Authorize]
         [HttpPost("upload-requirements/{requestId}")]
         public async Task<IActionResult> UploadRequirements(int requestId, IFormFile file)
@@ -376,10 +445,10 @@ namespace CerVer.API.Controllers
             return Ok(new { message = "File uploaded successfully", filePath = filePath });
         }
 
-        
+        // ============================================================
         // DELETE: api/membershiprequests/{id}
         // ADMIN ONLY - Delete a request
-     
+        // ============================================================
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRequest(int id)
@@ -402,7 +471,5 @@ namespace CerVer.API.Controllers
 
             return Ok(new { message = "Request deleted successfully" });
         }
-
     }
-
 }
