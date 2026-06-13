@@ -141,6 +141,8 @@ dotnet ef database update
 
 # Run the application
 dotnet run
+
+########
 📡 API Endpoints (29 Total)
 Authentication
 Method	Endpoint	Description	Auth
@@ -170,7 +172,7 @@ GET	/api/Certificates/download/{certNumber}	Download PDF	User
 GET	/api/Certificates/verify/{certNumber}	Public verification	None
 DELETE	/api/Certificates/revoke/{certNumber}	Revoke certificate	Admin
  
-
+---
 <img width="1090" height="812" alt="image" src="https://github.com/user-attachments/assets/78fa917a-b5a3-4093-9785-87c2ebb68cbc" />
 🚀 Deployment
 Deploy to Azure App Service
@@ -192,7 +194,7 @@ Memberships (1) ----< (many) MembershipRequests
 MembershipRequests (1) ----< (1) Certificates
 
 .
-
+---
 👨‍💻 Author
 Yusuf Rodiah Hadizah
 
@@ -214,9 +216,5 @@ MailKit for email handling
 
 Azure and GitHub for deployment
 
-⭐ Show Your Support
-If this API helped you learn or inspired your project, please give it a ⭐!
-
-https://img.shields.io/github/stars/web3doctuur-cloud/CerVerApi?style=social
 Built with ❤️ by Yusuf Rodiah Hadizah
 
