@@ -78,68 +78,283 @@ namespace CerVer.API.Services
     <meta charset='utf-8'>
     <title>Certificate of Membership</title>
     <style>
-        body {{
-            font-family: 'Times New Roman', serif;
+        @page {{
+            size: A4 landscape;
             margin: 0;
-            padding: 20px;
-            background: #f0f0f0;
         }}
-        .certificate {{
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border: 15px solid #d4af37;
-            padding: 40px;
+        body {{
+            font-family: 'Georgia', 'Times New Roman', serif;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }}
+        .cert-container {{
+            width: 297mm;
+            height: 210mm;
+            box-sizing: border-box;
+            padding: 2.5rem;
+            position: relative;
+            background-color: #ffffff;
+            overflow: hidden;
+        }}
+        /* Dual Gold Border Frame */
+        .cert-border-outer {{
+            width: 100%;
+            height: 100%;
+            border: 10px solid #d97706;
+            box-sizing: border-box;
+            padding: 8px;
             position: relative;
         }}
-        .certificate::before {{
-            content: '';
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            bottom: 15px;
-            border: 2px solid #d4af37;
+        .cert-border-inner {{
+            width: 100%;
+            height: 100%;
+            border: 2px solid #b45309;
+            box-sizing: border-box;
+            padding: 2.5rem;
+            text-align: center;
         }}
-        .header {{ text-align: center; margin-bottom: 30px; }}
-        .company-name {{ font-size: 36px; font-weight: bold; color: #2c3e50; }}
-        .certificate-title {{ font-size: 48px; color: #d4af37; margin: 20px 0; }}
-        .recipient-name {{ font-size: 42px; font-weight: bold; text-align: center; margin: 30px 0; }}
-        .membership-badge {{ background: #d4af37; padding: 5px 20px; border-radius: 25px; display: inline-block; }}
-        .details {{ margin: 30px 0; display: flex; justify-content: space-between; flex-wrap: wrap; }}
-        .detail-item {{ width: 45%; margin: 10px 0; }}
-        .qr-section {{ display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; }}
-        .qr-code img {{ width: 100px; height: 100px; }}
-        .signatures {{ margin-top: 40px; display: flex; justify-content: space-between; }}
-        .signature-line {{ width: 200px; border-top: 1px solid #333; margin: 10px 0; }}
-        .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #999; }}
+        /* Classical Corner Ornaments */
+        .corner {{
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-color: #b45309;
+            border-style: solid;
+        }}
+        .top-left {{ top: 12px; left: 12px; border-width: 3px 0 0 3px; }}
+        .top-right {{ top: 12px; right: 12px; border-width: 3px 3px 0 0; }}
+        .bottom-left {{ bottom: 12px; left: 12px; border-width: 0 0 3px 3px; }}
+        .bottom-right {{ bottom: 12px; right: 12px; border-width: 0 3px 3px 0; }}
+
+        .cert-header {{
+            margin-bottom: 1.5rem;
+        }}
+        .company-name {{
+            font-family: 'Arial', sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 0.35em;
+            color: #4b5563;
+            text-transform: uppercase;
+        }}
+        .cert-title {{
+            font-size: 38px;
+            color: #d97706;
+            margin: 15px 0 5px 0;
+            font-weight: normal;
+        }}
+        .cert-subtitle {{
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }}
+        .recipient-prefix {{
+            font-size: 15px;
+            color: #4b5563;
+            margin: 1.5rem 0 0.5rem 0;
+            font-style: italic;
+        }}
+        .recipient-name {{
+            font-size: 40px;
+            font-weight: bold;
+            color: #111827;
+            margin: 5px 0;
+            border-bottom: 2px solid #f59e0b;
+            display: inline-block;
+            padding-bottom: 5px;
+            min-width: 400px;
+        }}
+        .membership-text {{
+            font-size: 15px;
+            color: #4b5563;
+            margin: 1rem 0;
+        }}
+        .membership-badge {{
+            display: inline-block;
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #b45309;
+            padding: 8px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            border-radius: 4px;
+        }}
+        
+        /* Grid Details (Inline block columns for DinkToPdf compatibility) */
+        .cert-details {{
+            margin: 2.2rem 0;
+            text-align: left;
+            font-size: 0;
+        }}
+        .detail-col {{
+            display: inline-block;
+            width: 25%;
+            font-size: 12px;
+            vertical-align: top;
+            box-sizing: border-box;
+            padding: 0 10px;
+        }}
+        .detail-label {{
+            font-family: 'Arial', sans-serif;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: #9ca3af;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }}
+        .detail-value {{
+            color: #1f2937;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+        }}
+        .detail-value-mono {{
+            color: #1f2937;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 13px;
+        }}
+
+        /* Bottom Section alignment */
+        .bottom-section {{
+            margin-top: 1.5rem;
+            text-align: left;
+            font-size: 0;
+        }}
+        .bottom-col-left {{
+            display: inline-block;
+            width: 33%;
+            font-size: 13px;
+            vertical-align: bottom;
+        }}
+        .bottom-col-center {{
+            display: inline-block;
+            width: 34%;
+            font-size: 13px;
+            text-align: center;
+            vertical-align: bottom;
+        }}
+        .bottom-col-right {{
+            display: inline-block;
+            width: 33%;
+            font-size: 13px;
+            text-align: right;
+            vertical-align: bottom;
+        }}
+
+        /* Signatures and Seals */
+        .signature-block {{
+            display: inline-block;
+            text-align: center;
+        }}
+        .signature-line {{
+            width: 180px;
+            border-top: 1.5px solid #1f2937;
+            margin-bottom: 8px;
+        }}
+        .signature-name {{
+            font-weight: bold;
+            color: #111827;
+        }}
+        .signature-title {{
+            font-family: 'Arial', sans-serif;
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 2px;
+        }}
+
+        /* QR Wrapper */
+        .qr-wrapper {{
+            display: inline-block;
+            text-align: center;
+        }}
+        .qr-code-img {{
+            width: 80px;
+            height: 80px;
+            border: 1px solid #e5e7eb;
+            padding: 4px;
+            background: #ffffff;
+        }}
+        .verification-text {{
+            font-family: 'Arial', sans-serif;
+            font-size: 8px;
+            color: #9ca3af;
+            margin-top: 6px;
+            word-break: break-all;
+        }}
     </style>
 </head>
 <body>
-    <div class='certificate'>
-        <div class='header'>
-            <div class='company-name'>{companyName}</div>
-            <div class='certificate-title'>Certificate of Membership</div>
+    <div class='cert-container'>
+        <div class='cert-border-outer'>
+            <div class='top-left corner'></div>
+            <div class='top-right corner'></div>
+            <div class='bottom-left corner'></div>
+            <div class='bottom-right corner'></div>
+            <div class='cert-border-inner'>
+                <div class='cert-header'>
+                    <div class='company-name'>{companyName}</div>
+                    <h1 class='cert-title'>Certificate of Membership</h1>
+                    <p class='cert-subtitle'>OFFICIAL CREDENTIAL OF COMPLIANCE</p>
+                </div>
+
+                <div class='recipient-prefix'>This is proudly presented to</div>
+                <div class='recipient-name'>{fullName}</div>
+                
+                <div class='membership-text'>for approved and recognized membership status in</div>
+                <div>
+                    <div class='membership-badge'>{membershipTitle}</div>
+                </div>
+
+                <div class='cert-details'>
+                    <div class='detail-col'>
+                        <div class='detail-label'>Certificate Number</div>
+                        <div class='detail-value-mono'>{certificateNumber}</div>
+                    </div>
+                    <div class='detail-col'>
+                        <div class='detail-label'>Serial Number</div>
+                        <div class='detail-value-mono'>{serialNumber}</div>
+                    </div>
+                    <div class='detail-col'>
+                        <div class='detail-label'>Issue Date</div>
+                        <div class='detail-value'>{issueDateFormatted}</div>
+                    </div>
+                    <div class='detail-col'>
+                        <div class='detail-label'>Expiry Date</div>
+                        <div class='detail-value'>{expiryDateFormatted}</div>
+                    </div>
+                </div>
+
+                <div class='bottom-section'>
+                    <div class='bottom-col-left'>
+                        <div class='signature-block' style='text-align: left;'>
+                            <div class='signature-line'></div>
+                            <div class='signature-name'>{presidentName}</div>
+                            <div class='signature-title'>{presidentTitle}</div>
+                        </div>
+                    </div>
+                    <div class='bottom-col-center'>
+                        <div class='qr-wrapper'>
+                            <img class='qr-code-img' src='data:image/png;base64,{qrCodeBase64}' />
+                            <div class='verification-text'>Verification Link:<br/>{baseUrl}/verify/{certificateNumber}</div>
+                        </div>
+                    </div>
+                    <div class='bottom-col-right'>
+                        <div class='signature-block' style='text-align: right; display: inline-block;'>
+                            <div class='signature-line' style='margin-left: auto;'></div>
+                            <div class='signature-name'>{companyName}</div>
+                            <div class='signature-title'>Corporate Seal & Verification</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class='recipient-name'>{fullName}</div>
-        <div style='text-align: center;'>
-            <div class='membership-badge'>{membershipTitle}</div>
-        </div>
-        <div class='details'>
-            <div class='detail-item'><strong>Certificate Number:</strong><br/>{certificateNumber}</div>
-            <div class='detail-item'><strong>Serial Number:</strong><br/>{serialNumber}</div>
-            <div class='detail-item'><strong>Issue Date:</strong><br/>{issueDateFormatted}</div>
-            <div class='detail-item'><strong>Expiry Date:</strong><br/>{expiryDateFormatted}</div>
-        </div>
-        <div class='qr-section'>
-            <div class='qr-code'><img src='data:image/png;base64,{qrCodeBase64}' /></div>
-            <div>Verify at: {baseUrl}/verify/{certificateNumber}</div>
-        </div>
-        <div class='signatures'>
-            <div><div class='signature-line'></div>{presidentName}<br/>{presidentTitle}</div>
-            <div><div class='signature-line'></div>{companyName}<br/>Corporate Seal</div>
-        </div>
-        <div class='footer'>This certificate is the property of {companyName}</div>
     </div>
 </body>
 </html>";
@@ -151,8 +366,9 @@ namespace CerVer.API.Services
             {
                 GlobalSettings = {
                     ColorMode = DinkToPdf.ColorMode.Color,
-                    Orientation = DinkToPdf.Orientation.Portrait,
+                    Orientation = DinkToPdf.Orientation.Landscape,
                     PaperSize = DinkToPdf.PaperKind.A4,
+                    Margins = { Top = 0, Bottom = 0, Left = 0, Right = 0 }
                 },
                 Objects = {
                     new ObjectSettings() {
