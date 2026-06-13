@@ -77,7 +77,8 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 if (allowedOrigins == null || allowedOrigins.Length == 0)
 {
     // Default for development only
-    allowedOrigins = new[] { "http://localhost:5173", "https://localhost:5173" };
+    allowedOrigins = new[] { "http://localhost:5173", "https://localhost:5173","https://cerver-frontend.vercel.app", 
+    "https://cerver-frontend-git-main.vercel.app" };
 }
 
 builder.Services.AddCors(options =>
