@@ -1,4 +1,5 @@
 ﻿using CerVer.API.Data;
+using CerVer.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,16 @@ namespace CerVer.API.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly CertificateService _certificateService;
 
-        public CertificatesController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public CertificatesController(
+    ApplicationDbContext context,
+    IWebHostEnvironment environment,
+    CertificateService certificateService)
         {
             _context = context;
             _environment = environment;
+            _certificateService = certificateService;
         }
 
         // GET: api/certificates/my
@@ -142,6 +148,40 @@ namespace CerVer.API.Controllers
             var fileBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
 
             return File(fileBytes, "application/pdf", fileName);
+        }
+
+
+        // GET: api/certificates/qrcode/{certificateNumber}
+        [AllowAnonymous]
+        [HttpGet("qrcode/{certificateNumber}")]
+        public async Task<IActionResult> GetCertificateQrCode(string certificateNumber)
+        {
+            if (string.IsNullOrWhiteSpace(certificateNumber))
+            {
+                return BadRequest(new { message = "Certificate number is required" });
+            }
+
+            var certificate = await _context.Certificates
+                .FirstOrDefaultAsync(c => c.CertificateNumber == certificateNumber);
+
+            if (certificate == null)
+            {
+                return NotFound(new { message = "Certificate not found" });
+            }
+
+            var verificationUrl = !string.IsNullOrWhiteSpace(certificate.VerificationUrl)
+                ? certificate.VerificationUrl
+                : certificate.QrCodeUrl;
+
+            if (string.IsNullOrWhiteSpace(verificationUrl))
+            {
+                return NotFound(new { message = "Verification URL not found for this certificate" });
+            }
+
+            var qrCodeBase64 = _certificateService.GenerateQRCode(verificationUrl);
+            var qrCodeBytes = Convert.FromBase64String(qrCodeBase64);
+
+            return File(qrCodeBytes, "image/png");
         }
     }
 }
