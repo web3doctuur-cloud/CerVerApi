@@ -1,4 +1,4 @@
-﻿using CerVer.API.Models;
+using CerVer.API.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -17,16 +17,19 @@ namespace CerVer.API.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly IHostEnvironment _environment;
 
         // Constructor - gets services via Dependency Injection
         public AuthController(
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IHostEnvironment environment)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _environment = environment;
         }
 
         // REGISTER - Create a new user account
@@ -155,6 +158,29 @@ namespace CerVer.API.Controllers
 
             // Return the token as a string
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        // DEVELOPMENT ONLY: Promote user to admin (for fixing existing users)
+        [HttpPost("promote-to-admin")]
+        public async Task<IActionResult> PromoteToAdmin([FromQuery] string email)
+        {
+            if (!_environment.IsDevelopment())
+            {
+                return Forbid();
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                await _userManager.AddToRoleAsync(user, "Admin");
+            }
+
+            return Ok(new { message = $"User {email} promoted to Admin" });
         }
     }
 
