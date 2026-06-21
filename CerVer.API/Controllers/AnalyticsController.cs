@@ -103,22 +103,26 @@ namespace CerVer.API.Controllers
         [HttpGet("membership-popularity")]
         public async Task<IActionResult> GetMembershipPopularity()
         {
-            var popularMemberships = await _context.MembershipRequests
+            // First get all approved requests with their membership info, filtering out nulls
+            var approvedRequests = await _context.MembershipRequests
                 .Include(r => r.Membership)
-                .Where(r => r.Status == "Approved")
+                .Where(r => r.Status == "Approved" && r.Membership != null)
+                .ToListAsync();
+
+            // Now group in-memory to avoid EF Core issues
+            var popularMemberships = approvedRequests
                 .GroupBy(r => new { r.Membership.Id, r.Membership.Title })
                 .Select(g => new
                 {
                     membershipId = g.Key.Id,
                     membershipTitle = g.Key.Title,
                     requestCount = g.Count(),
-                    percentage = 0.0 // Will calculate after getting total
+                    percentage = 0.0
                 })
                 .OrderByDescending(g => g.requestCount)
-                .ToListAsync();
+                .ToList();
 
-            var totalApproved = await _context.MembershipRequests
-                .CountAsync(r => r.Status == "Approved");
+            var totalApproved = approvedRequests.Count;
 
             // Calculate percentages
             foreach (var item in popularMemberships)
@@ -126,10 +130,19 @@ namespace CerVer.API.Controllers
                 var percentage = totalApproved > 0
                     ? Math.Round((double)item.requestCount / totalApproved * 100, 2)
                     : 0;
-                item.GetType().GetProperty("percentage")?.SetValue(item, percentage);
+                // Instead of reflection, recreate the list with percentages
             }
+            
+            // Recreate the list with proper percentage values
+            var result = popularMemberships.Select(item => new 
+            {
+                item.membershipId,
+                item.membershipTitle,
+                item.requestCount,
+                percentage = totalApproved > 0 ? Math.Round((double)item.requestCount / totalApproved * 100, 2) : 0
+            }).ToList();
 
-            return Ok(popularMemberships);
+            return Ok(result);
         }
 
         // GET: api/analytics/recent-activity
