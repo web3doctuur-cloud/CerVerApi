@@ -1,4 +1,4 @@
-﻿using CerVer.API.Data;
+using CerVer.API.Data;
 using CerVer.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +40,34 @@ namespace CerVer.API.Controllers
 
             var certificates = await _context.Certificates
                 .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.IssueDate)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.MembershipRequestId,
+                    c.CertificateNumber,
+                    c.SerialNumber,
+                    c.FullName,
+                    c.MembershipTitle,
+                    c.IssueDate,
+                    c.ExpiryDate,
+                    c.QrCodeUrl,
+                    c.PdfPath,
+                    c.VerificationUrl,
+                    c.IsValid,
+                    isExpired = c.ExpiryDate <= DateTime.Today
+                })
+                .ToListAsync();
+
+            return Ok(certificates);
+        }
+
+        // GET: api/certificates/all
+        [Authorize(Roles = "Admin")]
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllCertificates()
+        {
+            var certificates = await _context.Certificates
                 .OrderByDescending(c => c.IssueDate)
                 .Select(c => new
                 {
@@ -182,6 +210,88 @@ namespace CerVer.API.Controllers
             var qrCodeBytes = Convert.FromBase64String(qrCodeBase64);
 
             return File(qrCodeBytes, "image/png");
+        }
+
+        // GET: api/certificates/verify-details/{certificateNumber}
+        [AllowAnonymous]
+        [HttpGet("verify-details/{certificateNumber}")]
+        public async Task<IActionResult> VerifyCertificateDetails(string certificateNumber)
+        {
+            if (string.IsNullOrWhiteSpace(certificateNumber))
+            {
+                return BadRequest(new
+                {
+                    valid = false,
+                    message = "Certificate number is required"
+                });
+            }
+
+            var certificate = await _context.Certificates
+                .FirstOrDefaultAsync(c => c.CertificateNumber == certificateNumber);
+
+            if (certificate == null)
+            {
+                return NotFound(new
+                {
+                    valid = false,
+                    message = "Certificate not found"
+                });
+            }
+
+            var isExpired = certificate.ExpiryDate <= DateTime.Today;
+            var valid = certificate.IsValid && !isExpired;
+
+            return Ok(new
+            {
+                valid,
+                message = valid
+                    ? "This certificate is authentic and active"
+                    : isExpired
+                        ? "This certificate is authentic but expired"
+                        : "This certificate is no longer valid",
+                certificate.Id,
+                certificate.CertificateNumber,
+                certificate.SerialNumber,
+                certificate.FullName,
+                certificate.MembershipTitle,
+                certificate.IssueDate,
+                certificate.ExpiryDate,
+                certificate.QrCodeUrl,
+                certificate.PdfPath,
+                certificate.VerificationUrl,
+                certificate.IsValid,
+                isExpired,
+                // Add membership request details
+                membershipRequestId = certificate.MembershipRequestId
+            });
+        }
+
+        // DELETE: api/certificates/revoke/{certificateNumber}
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("revoke/{certificateNumber}")]
+        public async Task<IActionResult> RevokeCertificate(string certificateNumber)
+        {
+            var certificate = await _context.Certificates
+                .FirstOrDefaultAsync(c => c.CertificateNumber == certificateNumber);
+
+            if (certificate == null)
+            {
+                return NotFound(new { message = "Certificate not found" });
+            }
+
+            if (!certificate.IsValid)
+            {
+                return BadRequest(new { message = "Certificate is already revoked" });
+            }
+
+            certificate.IsValid = false;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Certificate revoked successfully",
+                certificateNumber = certificate.CertificateNumber
+            });
         }
     }
 }
