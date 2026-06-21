@@ -150,11 +150,15 @@ namespace CerVer.API.Controllers
         [HttpGet("recent-activity")]
         public async Task<IActionResult> GetRecentActivity()
         {
-            // Get recent requests
-            var recentRequests = await _context.MembershipRequests
+            // Get recent requests (filter out null memberships)
+            var recentRequestsData = await _context.MembershipRequests
                 .Include(r => r.Membership)
                 .OrderByDescending(r => r.RequestedAt)
                 .Take(20)
+                .ToListAsync();
+                
+            var recentRequests = recentRequestsData
+                .Where(r => r.Membership != null)
                 .Select(r => new
                 {
                     id = r.Id,
@@ -165,13 +169,17 @@ namespace CerVer.API.Controllers
                     timestamp = r.RequestedAt,
                     message = $"New {r.Membership.Title} request from {r.FullName}"
                 })
-                .ToListAsync();
+                .ToList();
 
             // Get recent approvals
-            var recentApprovals = await _context.MembershipRequests
-                .Where(r => r.ApprovedAt.HasValue)
+            var recentApprovalsData = await _context.MembershipRequests
+                .Include(r => r.Membership)
+                .Where(r => r.ApprovedAt.HasValue && r.Membership != null)
                 .OrderByDescending(r => r.ApprovedAt)
                 .Take(20)
+                .ToListAsync();
+                
+            var recentApprovals = recentApprovalsData
                 .Select(r => new
                 {
                     id = r.Id,
@@ -182,7 +190,7 @@ namespace CerVer.API.Controllers
                     timestamp = r.ApprovedAt.Value,
                     message = $"Membership request approved for {r.FullName}"
                 })
-                .ToListAsync();
+                .ToList();
 
             // Get recent certificates
             var recentCertificates = await _context.Certificates
