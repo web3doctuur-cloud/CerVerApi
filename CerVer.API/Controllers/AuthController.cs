@@ -182,6 +182,59 @@ namespace CerVer.API.Controllers
 
             return Ok(new { message = $"User {email} promoted to Admin" });
         }
+
+        // DEVELOPMENT ONLY: Generate a valid password hash for a given password
+        [HttpGet("generate-hash")]
+        public async Task<IActionResult> GeneratePasswordHash([FromQuery] string password)
+        {
+            if (!_environment.IsDevelopment())
+            {
+                return Forbid();
+            }
+
+            var tempUser = new IdentityUser();
+            var hash = _userManager.PasswordHasher.HashPassword(tempUser, password);
+
+            return Ok(new { password = password, hash = hash });
+        }
+
+        // DEVELOPMENT ONLY: Reset admin user completely (delete and re-seed)
+        [HttpPost("reset-admin")]
+        public async Task<IActionResult> ResetAdmin()
+        {
+            if (!_environment.IsDevelopment())
+            {
+                return Forbid();
+            }
+
+            var adminEmail = _configuration["AdminSettings:Email"] ?? "admin@cerver.com";
+            var adminPassword = _configuration["AdminSettings:Password"] ?? "Admin@123";
+
+            var existingAdmin = await _userManager.FindByEmailAsync(adminEmail);
+            if (existingAdmin != null)
+            {
+                await _userManager.DeleteAsync(existingAdmin);
+            }
+
+            var newAdmin = new IdentityUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(newAdmin, adminPassword);
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(newAdmin, "Admin");
+                return Ok(new { message = $"Admin reset successfully! Email: {adminEmail}, Password: {adminPassword}" });
+            }
+            else
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return BadRequest(new { message = "Failed to reset admin", errors = errors });
+            }
+        }
     }
 
 }
